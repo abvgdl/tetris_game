@@ -463,7 +463,7 @@ def main():
     start_time = pygame.time.get_ticks()
 
     while True:
-        sprite.image = pygame.transform.scale(sprite.image, (clock.tick() // 10,  clock.tick() // 25))
+        sprite.image = pygame.transform.scale(sprite.image, (clock.tick() / 500,  clock.tick() // 25))
         current_time = pygame.time.get_ticks()
         elapsed_time = current_time - start_time
         if elapsed_time > 5000:

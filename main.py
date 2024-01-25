@@ -318,6 +318,7 @@ def remove_full_lines(board):
             y -= 1
     return count_removes_lines
 
+
 def load_image(name, colorkey=None):
     fullname = os.path.join(name)
     if not os.path.isfile(fullname):
@@ -331,6 +332,7 @@ def load_image(name, colorkey=None):
     else:
         image = image.convert_alpha()
     return image
+
 
 def is_line_complete(board, y):
     global blank
@@ -408,7 +410,7 @@ def game_process(screen, clock):
                         falling_piece.inf['y'] += 1
                     game.lastMoveDownTime = time.time()
 
-                elif event.key == pygame.K_SPACE and not(pygame.key.get_mods() & pygame.KMOD_LCTRL):
+                elif event.key == pygame.K_SPACE and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
                     game.movingDown = False
                     game.movingLeft = False
                     game.movingRight = False
@@ -452,24 +454,54 @@ def game_process(screen, clock):
 def main():
     global width, height
 
-    surface = pygame.display.set_mode((width, height + 30))
+    surface = pygame.display.set_mode((width + 30, height + 30))
     clock = pygame.time.Clock()
     pygame.init()
     pygame.display.set_caption('Tetris game')
 
+    pygame.mixer.music.load('TETRIS A.mp3')
+    pygame.mixer.music.play(-1, 0.0)
+
     sprite = pygame.sprite.Sprite()
-    sprite.image = load_image("OIP.jpg")
+    sprite.image = load_image("OIP.png")
     sprite.rect = sprite.image.get_rect()
     start_time = pygame.time.get_ticks()
+    sprite.rect.left += 150
+    sprite.rect.bottom += 400
 
+    clock.tick(2)
     while True:
-        sprite.image = pygame.transform.scale(sprite.image, (clock.tick() / 500,  clock.tick() // 25))
+        surface.fill((0, 0, 30))
+        sprite.rect.bottom -= 1
         current_time = pygame.time.get_ticks()
         elapsed_time = current_time - start_time
-        if elapsed_time > 5000:
-            break
         surface.blit(sprite.image, sprite.rect)
         pygame.display.flip()
+        pygame.display.update()
+        if elapsed_time > 500:
+            break
+
+    base_font = pygame.font.Font('PressStart2P-vaV7.ttf', 20)
+    main_text = base_font.render(f'IF YOU WANNA START PLAY', 0, (255, 255, 255))
+    subtext = base_font.render(f'PRESS CTRL + SPACE', 0, (255, 255, 255))
+
+    text_rect = main_text.get_rect()
+    text_rect.center = (int(width // 2), int(height // 2))
+
+    subtext_rect = subtext.get_rect()
+    subtext_rect.center = (int(width // 2), int(height // 2) + 20)
+
+    surface.blit(main_text, text_rect)
+    surface.blit(subtext, subtext_rect)
+
+    running = True
+    while running:
+        for event in pygame.event.get([pygame.KEYUP]):
+            if event.key == pygame.K_SPACE and pygame.key.get_mods() & pygame.KMOD_LCTRL:
+                running = False
+                break
+        pygame.display.update()
+        clock.tick()
 
     while True:
         score = game_process(surface, clock)

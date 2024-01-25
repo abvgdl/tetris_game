@@ -1,6 +1,5 @@
 import pygame
 import random
-import sys
 import os
 import time
 
@@ -142,6 +141,7 @@ class Shape:
         return self.inf['color']
 
 
+# СЛУЖЕБНЫЙ КЛАСС ИГРЫ
 class TetrisGame:
     def __init__(self, screen, *board_size):
         self.base_font = pygame.font.Font('PressStart2P-vaV7.ttf', 20)
@@ -179,13 +179,16 @@ class TetrisGame:
         self.board = Board(*board_size, self.surface)
         self.board.generate_blank_board()
 
+    # Рассчитывает частоту и уровень исходя из счёта
     def calculate_level_and_fall_frequency(self, score):
         self.level = int(score / 1000) + 1
         self.fallFreq = 0.27 - (self.level * 0.02)
 
+    # Конвертирует координату ячейки в координаты на игровом поле
     def coords_convert(self, x, y):
         return (self.x_lim + (x * self.size_field)), (self.up_lim + (y * self.size_field))
 
+    # Создает новую фигуру-тетромино
     def create_new_figure(self):
         global template_width
 
@@ -197,32 +200,36 @@ class TetrisGame:
                       (random.randint(0, 220), random.randint(0, 220), random.randint(0, 220)))
         return shape
 
+    # Добавляет блок на доску
     @staticmethod
-    def add_to_board(board, piece: Shape):
+    def add_to_board(board, elem: Shape):
         global blank, TEMPLATES, template_height, template_width
 
         for x in range(template_width):
             for y in range(template_height):
-                if TEMPLATES[piece.get_template()][piece.get_rotation()][y][x] != blank:
-                    board.board[x + piece.get_coords()[0]][y + piece.get_coords()[1]] = piece.get_color()
+                if TEMPLATES[elem.get_template()][elem.get_rotation()][y][x] != blank:
+                    board.board[x + elem.get_coords()[0]][y + elem.get_coords()[1]] = elem.get_color()
 
-    def check_pos_is_valid(self, board, piece: Shape, adj_x=0, adj_y=0):
+    # Проверяет возможно ли данное положение на игровом поле
+    def check_pos_is_valid(self, board, elem: Shape, adj_x=0, adj_y=0):
         global blank, TEMPLATES, template_height, template_width
 
         for x in range(template_width):
             for y in range(template_height):
-                is_board_on_top = y + piece.get_coords()[1] + adj_y < 0
-                if is_board_on_top or TEMPLATES[piece.get_template()][piece.get_rotation()][y][x] == blank:
+                is_board_on_top = y + elem.get_coords()[1] + adj_y < 0
+                if is_board_on_top or TEMPLATES[elem.get_template()][elem.get_rotation()][y][x] == blank:
                     continue
-                if not self.is_on_board(x + piece.get_coords()[0] + adj_x, y + piece.get_coords()[1] + adj_y):
+                if not self.is_on_board(x + elem.get_coords()[0] + adj_x, y + elem.get_coords()[1] + adj_y):
                     return False
-                if board.board[x + piece.get_coords()[0] + adj_x][y + piece.get_coords()[1] + adj_y] != blank:
+                if board.board[x + elem.get_coords()[0] + adj_x][y + elem.get_coords()[1] + adj_y] != blank:
                     return False
         return True
 
+    # Проверяет находится ли данная ячейка на доске
     def is_on_board(self, x, y):
         return 0 <= x < self.board.width and y < self.board.height
 
+    # Рисует элементарную единицу игры (блок)
     def draw_element(self, box_x, box_y, color, x=None, y=None):
         global blank
 
@@ -234,6 +241,7 @@ class TetrisGame:
                          (x + 1, y + 1, self.size_field, self.size_field))
         pygame.draw.rect(self.surface, color, (x + 1, y + 1, self.size_field - 4, self.size_field - 4))
 
+    # Рисует игровое поле
     def draw_board(self):
         global blank
 
@@ -252,6 +260,7 @@ class TetrisGame:
                     pygame.draw.rect(self.surface, (150, 150, 150), (x_, y_, self.size_field + 1, self.size_field + 1),
                                      1)
 
+    # Рисует игровые параметры (счёт и уровень)
     def draw_status(self):
         score_surf = self.base_font.render(f'Score:{self.score}', True, (255, 255, 255))
         score_rect = score_surf.get_rect()
@@ -263,26 +272,28 @@ class TetrisGame:
         level_rect.topleft = (self.width - 175, 125)
         self.surface.blit(level_surf, level_rect)
 
-    def draw_piece(self, piece: Shape, px=None, py=None):
+    # Рисует падающее тетромино
+    def draw_piece(self, elem: Shape, px=None, py=None):
         global TEMPLATES, template_height, template_width
 
-        shape = TEMPLATES[piece.get_template()][piece.get_rotation()]
+        shape = TEMPLATES[elem.get_template()][elem.get_rotation()]
         if px is None and py is None:
-            px, py = self.coords_convert(*piece.get_coords())
+            px, py = self.coords_convert(*elem.get_coords())
 
         for x in range(template_width):
             for y in range(template_height):
                 if shape[y][x] != blank:
-                    self.draw_element(None, None, piece.inf['color'], px + (x * self.size_field),
+                    self.draw_element(None, None, elem.inf['color'], px + (x * self.size_field),
                                       py + (y * self.size_field))
 
-    def draw_next_piece(self, piece):
+    # Рисует справа тетромино которое будет падать после текущего
+    def draw_next_piece(self, elem: Shape):
         next_surf = self.base_font.render('Next:', True, (255, 255, 255))
         next_rect = next_surf.get_rect()
         next_rect.topleft = (self.width - 150, 160)
         self.surface.blit(next_surf, next_rect)
         pygame.draw.rect(self.surface, (0, 0, 220), (width - 175, 185, 130, 130), 1)
-        self.draw_piece(piece, px=self.width - 150, py=200)
+        self.draw_piece(elem, px=self.width - 150, py=200)
 
 
 class Board:
@@ -292,6 +303,7 @@ class Board:
         self.height = height
         self.surface = screen
 
+    # Генерация пустой доски
     def generate_blank_board(self):
         self.board = []
         for i in range(self.width):
@@ -301,6 +313,7 @@ class Board:
         return self.board
 
 
+# УДАЛЯЕТ ЗАПОЛНЕНЫЕ ЛИНИИ В СПИСКЕ board
 def remove_full_lines(board):
     global blank
 
@@ -319,6 +332,7 @@ def remove_full_lines(board):
     return count_removes_lines
 
 
+# ОТВЕЧАЕТ ЗА ЗАГРУЗКУ ИЗОБРАЖЕНИЙ
 def load_image(name, colorkey=None):
     fullname = os.path.join(name)
     if not os.path.isfile(fullname):
@@ -334,6 +348,7 @@ def load_image(name, colorkey=None):
     return image
 
 
+# ПРОВЕРЯЕТ СКОЛЬКО ЗАПОЛНЕНО ЛИНИЙ
 def is_line_complete(board, y):
     global blank
 
@@ -343,12 +358,15 @@ def is_line_complete(board, y):
     return True
 
 
+# ОСНОВНОЙ ПРОЦЕСС ИГРЫ
 def game_process(screen, clock):
     global width, height
 
     board_width, board_height = 10, 20
 
     game = TetrisGame(screen, board_width, board_height)
+
+    # Создание падающего и статичного тетромино
     falling_piece = game.create_new_figure()
     next_piece = game.create_new_figure()
     while True:
@@ -359,9 +377,10 @@ def game_process(screen, clock):
 
             if not game.check_pos_is_valid(game.board, falling_piece):
                 return game.score
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                return
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_p:
                     pygame.mixer.music.stop()
@@ -373,24 +392,27 @@ def game_process(screen, clock):
                 elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
                     game.movingDown = False
 
+            # Движение влево-вправо
             elif event.type == pygame.KEYDOWN:
                 if (event.key == pygame.K_LEFT or event.key == pygame.K_a) and game.check_pos_is_valid(game.board,
                                                                                                        falling_piece,
                                                                                                        adj_x=-1):
-                    falling_piece.inf['x'] -= 1
                     game.movingLeft = True
                     game.movingRight = False
                     game.lastMoveSidewaysTime = time.time()
+                    falling_piece.inf['x'] -= 1
 
                 elif (event.key == pygame.K_RIGHT or event.key == pygame.K_d) and game.check_pos_is_valid(
                         game.board,
                         falling_piece,
                         adj_x=1):
-                    falling_piece.inf['x'] += 1
+
                     game.movingRight = True
                     game.movingLeft = False
                     game.lastMoveSidewaysTime = time.time()
+                    falling_piece.inf['x'] += 1
 
+                # Поворачивает падающий объект
                 elif event.key == pygame.K_UP or event.key == pygame.K_w:
                     falling_piece.inf['rotation'] = (falling_piece.get_rotation() + 1) % len(
                         TEMPLATES[falling_piece.get_template()])
@@ -404,12 +426,15 @@ def game_process(screen, clock):
                         falling_piece.inf['rotation'] = (falling_piece.get_rotation() + 1) % len(
                             TEMPLATES[falling_piece.get_template()])
 
+                # Тянет объект вниз
                 elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
                     game.movingDown = True
                     if game.check_pos_is_valid(game.board, falling_piece, adj_y=1):
                         falling_piece.inf['y'] += 1
                     game.lastMoveDownTime = time.time()
+                    game.score += 1
 
+                # Ставит падающий объект вниз поля(из-за ввода игрока)
                 elif event.key == pygame.K_SPACE and not (pygame.key.get_mods() & pygame.KMOD_LCTRL):
                     game.movingDown = False
                     game.movingLeft = False
@@ -419,6 +444,9 @@ def game_process(screen, clock):
                         if not game.check_pos_is_valid(game.board, falling_piece, adj_y=i):
                             break
                     falling_piece.inf['y'] += i - 1
+                    game.score += 15
+
+        # Движение объекта влево-вправо(из-за ввода игрока)
         if (game.movingLeft or game.movingRight) and time.time() - game.lastMoveSidewaysTime > 0.15:
             if game.movingLeft and game.check_pos_is_valid(game.board, falling_piece, adj_x=-1):
                 falling_piece.inf['x'] -= 1
@@ -426,11 +454,14 @@ def game_process(screen, clock):
                 falling_piece.inf['x'] += 1
             game.lastMoveSidewaysTime = time.time()
 
+        # Движение объекта вниз (при участии игрока)
         if game.movingDown and time.time() - game.lastMoveDownTime > 0.1 and game.check_pos_is_valid(game.board,
                                                                                                      falling_piece,
                                                                                                      adj_y=1):
             falling_piece.inf['y'] += 1
             game.lastMoveDownTime = time.time()
+
+        # Движение объекта вниз (Без участия игрока)
         if time.time() - game.lastFallTime > game.fallFreq:
             if not game.check_pos_is_valid(game.board, falling_piece, adj_y=1):
                 game.add_to_board(game.board, falling_piece)
@@ -440,6 +471,8 @@ def game_process(screen, clock):
             else:
                 falling_piece.inf['y'] += 1
                 game.lastFallTime = time.time()
+
+        # Отрисовка всех объектов
         screen.fill((0, 0, 0))
         game.draw_board()
         game.draw_status()
@@ -451,6 +484,7 @@ def game_process(screen, clock):
         clock.tick(fps)
 
 
+# ДОИГРОВОЙ ПРОЦЕСС И ИНТРО
 def main():
     global width, height
 

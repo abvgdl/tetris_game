@@ -2,6 +2,7 @@ import pygame
 import random
 import os
 import time
+import sys
 
 fps = 25
 width, height = 640, 480
@@ -172,8 +173,6 @@ class TetrisGame:
         # Иницилизация цветов
 
         self.surface = screen
-
-        # pygame.mixer.music.load('tetris.mp4')
 
         # Иницилизация игрового поля
         self.board = Board(*board_size, self.surface)
@@ -358,6 +357,11 @@ def is_line_complete(board, y):
     return True
 
 
+def terminate():
+    pygame.quit()
+    sys.exit()
+
+
 # ОСНОВНОЙ ПРОЦЕСС ИГРЫ
 def game_process(screen, clock):
     global width, height
@@ -369,6 +373,7 @@ def game_process(screen, clock):
     # Создание падающего и статичного тетромино
     falling_piece = game.create_new_figure()
     next_piece = game.create_new_figure()
+
     while True:
         if falling_piece is None:
             falling_piece = next_piece
@@ -377,6 +382,12 @@ def game_process(screen, clock):
 
             if not game.check_pos_is_valid(game.board, falling_piece):
                 return game.score
+
+        for event in pygame.event.get(pygame.QUIT):
+            terminate()
+        for event in pygame.event.get(pygame.KEYUP):
+            if event.key == pygame.K_ESCAPE:
+                terminate()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -505,6 +516,13 @@ def main():
 
     clock.tick(2)
     while True:
+
+        for event in pygame.event.get(pygame.QUIT):
+            terminate()
+        for event in pygame.event.get(pygame.KEYUP):
+            if event.key == pygame.K_ESCAPE:
+                terminate()
+
         surface.fill((0, 0, 30))
         sprite.rect.bottom -= 1
         current_time = pygame.time.get_ticks()
@@ -530,6 +548,10 @@ def main():
 
     running = True
     while running:
+
+        for event in pygame.event.get(pygame.QUIT):
+            terminate()
+
         for event in pygame.event.get([pygame.KEYUP]):
             if event.key == pygame.K_SPACE and pygame.key.get_mods() & pygame.KMOD_LCTRL:
                 running = False
@@ -538,6 +560,13 @@ def main():
         clock.tick()
 
     while True:
+
+        for event in pygame.event.get(pygame.QUIT):
+            terminate()
+        for event in pygame.event.get(pygame.KEYUP):
+            if event.key == pygame.K_ESCAPE:
+                terminate()
+
         score = game_process(surface, clock)
         base_font = pygame.font.Font('PressStart2P-vaV7.ttf', 35)
         base_font_outline = pygame.font.Font('PressStart2P-vaV7.ttf', 35)
